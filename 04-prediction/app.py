@@ -2,35 +2,66 @@
 # load Flask 
 import flask
 from flask import jsonify
-from geopy.geocoders import Nominatim
 import requests
+from pyspark.ml.classification import RandomForestClassificationModel
+from pyspark.sql.types import StructType,StructField, StringType, IntegerType, FloatType
+from pyspark.ml import Pipeline
+from pyspark.sql import Row
+from pyspark.sql.functions import *
+from pyspark.sql import SparkSession
+from pyspark.sql.types import DoubleType
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+from pyspark.ml.feature import StringIndexer, VectorIndexer, VectorAssembler
+
+
 
 app = flask.Flask(__name__)
 
 # define a predict function as an endpoint 
 @app.route("/", methods=["GET","POST"])
-def weather():
+def prediction():
 
-    data = {"success": False}
-    #https://pypi.org/project/geopy/
-    geolocator = Nominatim(user_agent="cloud_function_weather_app")
-
-
+    data = {}
     params = flask.request.json
     if params is None:
         params = flask.request.args
 
 
     # params = request.get_json()
-    if "msg" in params:
-        location = geolocator.geocode(str(params['msg']))
-        # https://www.weather.gov/documentation/services-web-api
-        result1 = requests.get(f"https://api.weather.gov/points/{location.latitude},{location.longitude}")
-        result2 = requests.get(f"{result1.json()['properties']['forecast']}")
-        data["response"] = result2.json()
-        data["success"] = True
+    if "data" in params:
+        spark = SparkSession \
+        .builder \
+        .appName("ML Pipeline") \
+        .getOrCreate()
+
+        sc = SparkContext.getOrCreate();
+
+        rfModel = RandomForestClassificationModel.load("data/models/rf")
+        data2 = [
+            (float(params['data']['total_chuvas']),float(params['data']['media_diaria'])),
+        ]
+
+        schema = StructType([ \
+            StructField("Total de Chuvas(mm)",FloatType(),True), \
+            StructField("Média diária de chuvas(mm)",FloatType(),True), \
+        ])
+        
+        df = spark.createDataFrame(data=data2,schema=schema)
+
+        informacoes_necessarias = ['Total de Chuvas(mm)','Média diária de chuvas(mm)']
+        assembler = VectorAssembler(inputCols=informacoes_necessarias, outputCol='informacoes')
+        df = assembler.transform(df)
+
+        teste = rfModel.transform(df)
+
+        saida = (teste.first()['prediction'])
+
+        if saida == 0.0 :
+            data["previsao"] = "Própria"
+        else:
+            data["previsao"] = "Imrópria"
     return jsonify(data)
     
 # start the flask app, allow remote connections
 if __name__ == '__main__':
-    app.run(host='0.0.0.0',port=8080)
+    app.run(host='0.0.0.0',port=3000)

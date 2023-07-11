@@ -1,21 +1,21 @@
 version: '3.8'
 services:
-    03-training:
-      build:
-        context: ./03-training
-      working_dir: /app
-      volumes:
-        - ./03-training:/app
+    # 03-training:
+    #   build:
+    #     context: ./03-training
+    #   working_dir: /app
+    #   volumes:
+    #     - ./03-training:/app
     04-prediction:
       build:
         context: ./04-prediction
       working_dir: /app
       ports:
-        - 8080:8080
+        - 3000:3000
       volumes:
         - ./04-prediction:/app
-      depends_on: 
-        - 03-training
+      # depends_on: 
+      #   - 03-training
   # database:
   #   build:
   #     context: ./database    

@@ -1,2 +1,4 @@
-Flask
-geopy
+flask
+pyspark
+requests
+numpy
