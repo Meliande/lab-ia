@@ -1,11 +1,30 @@
 version: '3.8'
 services:
-    # 03-training:
-    #   build:
-    #     context: ./03-training
-    #   working_dir: /app
-    #   volumes:
-    #     - ./03-training:/app
+    01-download :
+      build:
+        context: ./01-download
+      working_dir: /app
+      volumes:
+        - ./01-download:/app
+        - ./data:/app/data
+    02-preprocessing:
+      build:
+        context: ./02-preprocessing
+      working_dir: /app
+      volumes:
+        - ./02-preprocessing:/app
+        - ./data:/app/data
+      depends_on: 
+        - 01-download
+    03-training:
+      build:
+        context: ./03-training
+      working_dir: /app
+      volumes:
+        - ./03-training:/app
+        - ./data:/app/data
+      depends_on: 
+        -  02-preprocessing
     04-prediction:
       build:
         context: ./04-prediction
@@ -14,101 +33,6 @@ services:
         - 3000:3000
       volumes:
         - ./04-prediction:/app
-      # depends_on: 
-      #   - 03-training
-  # database:
-  #   build:
-  #     context: ./database    
-  #   container_name: database
-  #   command: mysqld --user=root --verbose
-  #   # volumes:
-  #   #   - ./data_mysql:/var/lib/mysql:z
-  #   ports:
-  #     - "3306:3306"
-
-  # nginx:
-  #   image: nginx:1.15-alpine
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./config/${env}/nginx/:/etc/nginx/conf.d
-  #     - ./config/${env}/certbot/conf:/etc/letsencrypt
-  #     - ./config/${env}/certbot/www:/var/www/certbot
-  #     - /etc/sudoers.d:/etc/sudoers.d:ro
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   networks:
-  #     default:
-  #       aliases:
-  #         - app.dev.doamais.com
-  #         - app.dev.solidareasy.com
-  #         - api.dev.doamais.com
-  #         - api.dev.solidareasy.com
-  #         - api.test.doamais.com
-  #         - api.test.solidareasy.com
-  #   command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
-  #   depends_on:
-  #     - certbot
-  #     - app
-  #     - schedule
-  # certbot:
-  #   image: certbot/certbot
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./config/${env}/certbot/conf:/etc/letsencrypt
-  #     - ./config/${env}/certbot/www:/var/www/certbot
-  #   entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-  # schedule:
-  #   build:
-  #     context: ./scheduler   
-  #   volumes:
-  #     - .:/app
-  #     - /app/node_modules
-  #   entrypoint: sh /app/crontab.sh
-  # app:
-    
-  #   build:
-  #     args: 
-  #       USER_ID: "${UID}"
-  #       GROUP_ID: "${GID}"
-  #     context: .
-  #   user: "${UID}:${GID}"
-  #   working_dir: /solidareasy/app
-  #   stdin_open: true
-  #   command:  yarn ${env} --scope @app/webapp
-  #   container_name: app
-  #   volumes:
-  #     - ./:/solidareasy/app
-  #     - /etc/group:/etc/group:ro
-  #     - /etc/passwd:/etc/passwd:ro
-  #     - /etc/shadow:/etc/shadow:ro
-  #     - /etc/sudoers.d:/etc/sudoers.d:ro
-  #   tty: true
-  #   environment:
-  #     - NODE_ENV=${env}
-  #     - CHOKIDAR_USEPOLLING=true
-  #     - NEXT_PUBLIC_APP_LOCAL_URL=http://app:${app_port}
-  #     - NEXT_PUBLIC_API_LOCAL_URL=http://app:${app_port}
-  #     # - NEXT_PUBLIC_GRAPHQL_API=http://graphqlengine:8080/v1/graphql
-  #     - DB_HOST=database
-  #   ports:
-  #     - "${app_port}:${app_port}"   
-  #     - "9229:9229"
-  #   depends_on:
-  #     - database
-  # graphqlengine:
-  #   image: hasura/graphql-engine:v1.3.3
-  #   ports:
-  #   - "8080:8080"
-  #   depends_on:
-  #   - "databasepostgres"
-  #   # restart: always
-  #   environment:
-  #     HASURA_GRAPHQL_DATABASE_URL: postgres://donatte_dev_usr:dontte2029@databasepostgres:5432/donatte_dev
-  #     ## enable the console served by server
-  #     HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
-  #     ## enable debugging mode. It is recommended to disable this in production
-  #     HASURA_GRAPHQL_DEV_MODE: "true"
-  #     HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
-  #     ## uncomment next line to set an admin secret
-  #     # HASURA_GRAPHQL_ADMIN_SECRET: myadminsecretkey
+        - ./data:/app/data
+      depends_on: 
+        - 03-training

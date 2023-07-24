@@ -36,12 +36,12 @@ class ExtraiBoletins(Spider):
     name = 'inema-balneabilidade-extrai-boletins'
 
     def start_requests(self):
-        download_path = Path('./download')
+        download_path = Path('data/download/boletins')
         if not download_path.exists():
             download_path.mkdir()
 
         fobj = io.TextIOWrapper(
-            lzma.open('data/output/boletins.csv.xz'),
+            lzma.open('data/download/boletins.csv.xz'),
             encoding='utf8'
         )
         for row in csv.DictReader(fobj):

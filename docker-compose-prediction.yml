@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+    04-prediction:
+      build:
+        context: ./04-prediction
+      working_dir: /app
+      ports:
+        - 3000:3000
+      volumes:
+        - ./04-prediction:/app
+        - ./data:/app/data
